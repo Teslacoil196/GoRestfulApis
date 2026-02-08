@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	TestAccount1 Account
-	TestAccount2 Account
-)
+// var (
+// 	TestAccount1
+// 	TestAccount2
+// )
 
-var accountsCreated = false
+//var accountsCreated = false
 
 func CreateAccountsForTransferTests(t *testing.T) {
 	account1 := CreateRamdonAccount(t)
@@ -28,9 +28,9 @@ func CreateAccountsForTransferTests(t *testing.T) {
 
 func CreateRandomTransfer(t *testing.T) Transfer {
 
-	if !accountsCreated {
+	if !accountsCreatedForTrasnfers {
 		CreateAccountsForTransferTests(t)
-		accountsCreated = true
+		accountsCreatedForTrasnfers = true
 	}
 
 	arug := CreateTransferParams{
