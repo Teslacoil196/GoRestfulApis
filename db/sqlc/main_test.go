@@ -1,17 +1,13 @@
 package db
 
 import (
+	"TeslaCoil196/util"
 	"database/sql"
 	"log"
 	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
-)
-
-const (
-	dbDriver = "postgres"
-	dbSource = "postgres://root:root@localhost:5432/TeslaBank?sslmode=disable"
 )
 
 var (
@@ -27,7 +23,13 @@ var db *sql.DB
 
 func TestMain(m *testing.M) {
 	var err error
-	db, err = sql.Open(dbDriver, dbSource)
+
+	config, err := util.LoadConfig("../..")
+	if err != nil {
+		log.Fatal("Could not load config ", err)
+	}
+
+	db, err = sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("Couldn't connect to databse ", err)
 	}
