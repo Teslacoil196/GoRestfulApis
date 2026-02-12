@@ -6,19 +6,26 @@ import (
 	"fmt"
 )
 
-type Store struct {
+// a store interface to mock the database
+type Store interface {
+	Querier
+	TranferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error)
+}
+
+// SQLStore let's us connect to databse because it has the Queries and db
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		Queries: New(db),
 		db:      db,
 	}
 }
 
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -52,7 +59,7 @@ type TransferTxResult struct {
 
 var txKey = struct{}{}
 
-func (store *Store) TranferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TranferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	store.execTx(ctx, func(q *Queries) error {

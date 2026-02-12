@@ -22,4 +22,12 @@ test :
 server :
 	go run main.go
 
+mockgen :
+	cd ../..
+	mv go.mod go-temp.mod
+	mv go-spoof.mod go.mod
+	mockgen -destination db/mock/store.go TeslaCoil196/db/sqlc Store
+	mv go.mod go-spoof.mod
+	mv go-temp.mod go.mod
+
 .PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server
