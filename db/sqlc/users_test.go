@@ -10,9 +10,13 @@ import (
 )
 
 func CreateRamdonUser(t *testing.T) User {
+
+	hashedPassword, err := util.HashedPassword(util.RandomString(6))
+	require.NoError(t, err)
+
 	argument := CreateUserParams{
 		Username:       util.RandomOwner(),
-		HashedPassword: "shhhhhnotell",
+		HashedPassword: hashedPassword,
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
 	}

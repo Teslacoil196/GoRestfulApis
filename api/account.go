@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type CreateAccountServerParams struct {
@@ -31,6 +32,14 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	account, err := server.db.CreateAccount(ctx, arg)
 	if err != nil {
+
+		if pgerr, ok := err.(*pq.Error); ok {
+			switch pgerr.Code.Name() {
+			case "foregin_key_violation", "unique_violation":
+				ctx.JSON(http.StatusForbidden, errorHandler(err))
+				return
+			}
+		}
 		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
 		return
 	}
