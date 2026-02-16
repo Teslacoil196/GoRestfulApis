@@ -2,6 +2,9 @@ package api
 
 import (
 	db "TeslaCoil196/db/sqlc"
+	"TeslaCoil196/token"
+	"TeslaCoil196/util"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,32 +13,51 @@ import (
 )
 
 type Server struct {
-	db     db.Store
-	router *gin.Engine
+	db         db.Store
+	config     util.Config
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(db db.Store) *Server {
-	server := &Server{db: db}
-	router := gin.Default()
+func NewServer(db db.Store, config util.Config) (*Server, error) {
+	tokenMaker, err := token.NewPastoMaker(config.SymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create tokenMaker %s", errorHandler(err))
+	}
+	server := &Server{
+		config:     config,
+		db:         db,
+		tokenMaker: tokenMaker,
+	}
 
 	v, ok := binding.Validator.Engine().(*validator.Validate)
 	if ok {
 		v.RegisterValidation("currency", validateCurrency)
 	}
-	router.POST("/users", server.createUser)
+	server.setUpRouter()
 
-	router.POST("/account", server.createAccount)
-	router.GET("/account/:id", server.getAccount)
-	router.GET("/account", server.listAccounts)
-	router.DELETE("/account/delete/:id", server.deleteAccount)
-	router.POST("/account/update", server.updateAccount)
+	return server, nil
+}
 
-	router.POST("/transfer", server.createTransfer)
+func (server *Server) setUpRouter() {
+	router := gin.Default()
 
 	router.GET("/", HelloTheir)
 
+	router.POST("/users", server.createUser)
+	router.POST("/users/login", server.loginUser)
+
+	authRoot := router.Group("/").Use(authMiddleware(server.tokenMaker))
+
+	authRoot.POST("/account", server.createAccount)
+	authRoot.GET("/account/:id", server.getAccount)
+	authRoot.GET("/account", server.listAccounts)
+	authRoot.DELETE("/account/delete/:id", server.deleteAccount)
+	authRoot.POST("/account/update", server.updateAccount)
+
+	authRoot.POST("/transfer", server.createTransfer)
+
 	server.router = router
-	return server
 }
 
 func HelloTheir(ctx *gin.Context) {

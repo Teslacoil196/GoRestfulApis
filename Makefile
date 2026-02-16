@@ -30,4 +30,12 @@ mockgen :
 	mv go.mod go-spoof.mod
 	mv go-temp.mod go.mod
 
-.PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server
+mockgen-win :
+	cd ../..
+	rename go.mod go-temp.mod
+	rename go-spoof.mod go.mod
+	mockgen -destination db/mock/store.go TeslaCoil196/db/sqlc Store
+	rename go.mod go-spoof.mod
+	rename go-temp.mod go.mod
+
+.PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server mockgen-win

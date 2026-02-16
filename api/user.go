@@ -3,6 +3,7 @@ package api
 import (
 	db "TeslaCoil196/db/sqlc"
 	"TeslaCoil196/util"
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -17,7 +18,7 @@ type CreateUserServerParams struct {
 	Email    string `json:"email" binding:"required,email"`
 }
 
-type CreateUserServerResponseParams struct {
+type UserResponse struct {
 	Username      string    `json:"username"`
 	FullName      string    `json:"full_name"`
 	Email         string    `json:"email"`
@@ -62,13 +63,62 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	response := CreateUserServerResponseParams{
+	response := newUserResponse(user)
+	//fmt.Println(" status ok ")
+	ctx.JSON(http.StatusOK, response)
+}
+
+func newUserResponse(user db.User) UserResponse {
+	return UserResponse{
 		Username:      user.Username,
 		FullName:      user.FullName,
 		Email:         user.Email,
 		CreatedAt:     user.CreatedAt,
 		LastPassReset: user.LastPassReset,
 	}
-	//fmt.Println(" status ok ")
-	ctx.JSON(http.StatusOK, response)
+}
+
+type loginUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type loginUSerResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        UserResponse `json:"user"`
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+	var request loginUserRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorHandler(err))
+		return
+	}
+
+	user, err := server.db.GetUser(ctx, request.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorHandler(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
+		return
+	}
+	err = util.CheckPasswords(request.Password, user.HashedPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorHandler(err))
+	}
+
+	token, err := server.tokenMaker.CreateToken(user.Username, server.config.TokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
+		return
+	}
+	reply := loginUSerResponse{
+		AccessToken: token,
+		User:        newUserResponse(user),
+	}
+	ctx.JSON(http.StatusOK, reply)
+
 }

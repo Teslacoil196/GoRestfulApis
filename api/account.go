@@ -2,7 +2,9 @@ package api
 
 import (
 	db "TeslaCoil196/db/sqlc"
+	"TeslaCoil196/token"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -11,7 +13,7 @@ import (
 )
 
 type CreateAccountServerParams struct {
-	Owner    string `json:"owner" binding:"required"`
+	//Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -24,8 +26,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	arg := db.CreateAccountParams{
-		Owner:    request.Owner,
+		Owner:    authPayload.Username,
 		Balance:  int64(0),
 		Currency: request.Currency,
 	}
@@ -68,6 +72,14 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
 		return
 	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if account.Owner != authPayload.Username {
+		err := errors.New("Account doesn't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorHandler(err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, account)
 }
 
