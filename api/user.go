@@ -3,7 +3,6 @@ package api
 import (
 	db "TeslaCoil196/db/sqlc"
 	"TeslaCoil196/util"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -29,7 +28,7 @@ type CreateUserServerResponseParams struct {
 func (server *Server) createUser(ctx *gin.Context) {
 	var request CreateUserServerParams
 
-	fmt.Println("CreateUser called")
+	//fmt.Println("CreateUser called")
 
 	err := ctx.ShouldBindJSON(&request)
 	if err != nil {
@@ -49,7 +48,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		FullName:       request.FullName,
 		Email:          request.Email,
 	}
-	fmt.Println("about to make the call")
+	//fmt.Println("about to make the call")
 	user, err := server.db.CreateUser(ctx, arg)
 	if err != nil {
 		if pgerr, ok := err.(*pq.Error); ok {
@@ -70,6 +69,6 @@ func (server *Server) createUser(ctx *gin.Context) {
 		CreatedAt:     user.CreatedAt,
 		LastPassReset: user.LastPassReset,
 	}
-	fmt.Println(" status ok ")
+	//fmt.Println(" status ok ")
 	ctx.JSON(http.StatusOK, response)
 }
