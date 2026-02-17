@@ -2,7 +2,9 @@ package api
 
 import (
 	db "TeslaCoil196/db/sqlc"
+	"TeslaCoil196/token"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -25,10 +27,19 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	if !server.validateAccounts(ctx, request.FromAccountID, request.Currency) {
+	fromAccount, valid := server.validateAccounts(ctx, request.FromAccountID, request.Currency)
+	if !valid {
 		return
 	}
-	if !server.validateAccounts(ctx, request.ToAccountID, request.Currency) {
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if authPayload.Username != fromAccount.Owner {
+		err := errors.New("Account doesn't belong to authencated user")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorHandler(err))
+	}
+
+	_, valid = server.validateAccounts(ctx, request.ToAccountID, request.Currency)
+	if !valid {
 		return
 	}
 
@@ -46,23 +57,23 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (server *Server) validateAccounts(ctx *gin.Context, accountID int64, currency string) bool {
+func (server *Server) validateAccounts(ctx *gin.Context, accountID int64, currency string) (db.Account, bool) {
 
 	account, err := server.db.GetAccount(ctx, accountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
-			return false
+			return account, false
 		}
 		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("Currency mismatch for account %d; %s vs %s", accountID, account.Currency, currency)
 		ctx.JSON(http.StatusBadRequest, errorHandler(err))
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 }

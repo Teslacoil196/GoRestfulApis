@@ -84,21 +84,23 @@ func TestDeleteAccount(t *testing.T) {
 }
 
 func TestListAccounts(t *testing.T) {
+	var lastAccount Account
 	for i := 0; i < 10; i++ {
-		CreateRamdonAccount(t)
+		lastAccount = CreateRamdonAccount(t)
 	}
 
 	arg := ListAccountsParams{
+		Owner:  lastAccount.Owner,
 		Limit:  5,
-		Offset: 5,
+		Offset: 0,
 	}
 
 	accoutns, err := testQuries.ListAccounts(context.Background(), arg)
 
 	require.NoError(t, err)
-	require.Len(t, accoutns, 5)
+	require.NotEmpty(t, accoutns)
 
 	for _, account := range accoutns {
-		require.NotEmpty(t, account)
+		require.Equal(t, account.Owner, lastAccount.Owner)
 	}
 }
