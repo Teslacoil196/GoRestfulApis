@@ -3,7 +3,6 @@ package api
 import (
 	"TeslaCoil196/token"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,8 +24,8 @@ func addAuthorization(t *testing.T,
 
 	authorizationHeader := fmt.Sprintf("%s %s", authorizationType, token)
 	request.Header.Set(authorizationHeaderKet, authorizationHeader)
-	log.Println(request.Header)
-	log.Println(request.Body)
+	//log.Println(request.Header)
+	//log.Println(request.Body)
 }
 
 func TestMiddlewareAith(t *testing.T) {
