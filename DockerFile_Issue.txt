@@ -11,3 +11,7 @@ COPY app.env .
 
 EXPOSE 8080
 CMD [ "/app/main" ]
+
+while docker run it gives 
+exec /app/main: no such file or directory
+fix - RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main main.go. (as shown above)

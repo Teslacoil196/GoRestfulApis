@@ -1,5 +1,5 @@
 postgres:
-	docker run --name postgres-trixie -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:17 
+	docker run --name postgres-trixie --network tesla-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=root -d postgres:17 
 
 createdb:
 	docker exec -it postgres-trixie createdb --username=root --owner=root TeslaBank
@@ -37,5 +37,14 @@ mockgen-win :
 	mockgen -destination db/mock/store.go TeslaCoil196/db/sqlc Store
 	rename go.mod go-spoof.mod
 	rename go-temp.mod go.mod
+
+build-network:
+	docker network create tesla-network
+
+buildbank:
+	docker build -t teslabank:latest .
+
+runbank:
+	Docker run --name teslabank --network tesla-network -p 8080:8080 -e DB_SOURCE='postgres://root:root@postgres-trixie:5432/TeslaBank?sslmode=disable' teslabank:latest
 
 .PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server mockgen-win
