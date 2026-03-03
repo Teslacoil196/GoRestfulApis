@@ -5,7 +5,7 @@ name: CD-deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   
 jobs:
 
