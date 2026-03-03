@@ -47,4 +47,12 @@ buildbank:
 runbank:
 	Docker run --name teslabank --network tesla-network -p 8080:8080 -e DB_SOURCE='postgres://root:root@postgres-trixie:5432/TeslaBank?sslmode=disable' teslabank:latest
 
-.PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server mockgen-win
+proto:
+	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative \
+    --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+    proto/*.proto
+
+evens:
+	evans --host localhost --port 9090 -r repl --reflection
+
+.PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server mockgen-win proto
