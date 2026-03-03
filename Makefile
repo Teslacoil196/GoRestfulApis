@@ -54,5 +54,8 @@ proto:
 
 evens:
 	evans --host localhost --port 9090 -r repl --reflection
+	show package
+	package pb
+	show service
 
 .PHONY: createdb dropdb postgres migrate-up migrate-down sqlc-gen test server mockgen-win proto
